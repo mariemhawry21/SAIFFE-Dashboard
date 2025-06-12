@@ -10,7 +10,7 @@ import Login from "../Pages/Global/Login";
 import DoctorPatients from "../Pages/Doctor/DoctorPatients";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Doctors from "../Pages/Admin/Doctors";
-import { Settings } from "@mui/icons-material";
+import  Settings  from "../Pages/Doctor/Settings";
 import AddDoctor from "../Pages/Admin/AddDoctor";
 const AppRoutes = () => {
   return (

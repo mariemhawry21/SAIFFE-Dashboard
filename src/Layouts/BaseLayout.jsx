@@ -1,5 +1,6 @@
 import {
   AppBar,
+  Badge,
   Box,
   CssBaseline,
   Divider,
@@ -8,14 +9,19 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Menu,
   Toolbar,
   Typography,
   useTheme,
+  MenuItem,
+  Avatar,
+  ListItemIcon,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 const drawerWidth = 240;
 
@@ -38,14 +44,25 @@ const navItemVariants = {
   hover: { scale: 1.02, backgroundColor: "rgba(0, 0, 0, 0.04)" },
   tap: { scale: 0.98 },
 };
-
+// Animation variants
+const notificationVariants = {
+  initial: { scale: 0.8, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 500 },
+  },
+  exit: { scale: 0.8, opacity: 0 },
+};
 export const BaseLayout = ({
   navItems,
   logo,
   title = "Dashboard",
   children,
+  notifications = [],
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -53,7 +70,13 @@ export const BaseLayout = ({
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+  const handleNotificationClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
   const drawer = (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <Box
@@ -118,23 +141,127 @@ export const BaseLayout = ({
           backgroundColor: "white",
           color: "black",
           boxShadow: "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <Toolbar>
+        <Toolbar
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ display: { sm: "none" }, mr: 2 }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </motion.div>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                fontWeight: 600,
+                letterSpacing: 0.5,
+              }}
+            >
+              {title}
+            </Typography>
+          </Box>
+          {/* Notification Bell with Badge */}
           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
             <IconButton
               color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { sm: "none" } }}
+              aria-label="notifications"
+              onClick={handleNotificationClick}
             >
-              <MenuIcon />
+              <Badge
+                badgeContent={notifications.length}
+                color="error"
+                overlap="circular"
+              >
+                <NotificationsIcon />
+              </Badge>
             </IconButton>
           </motion.div>
-          <Typography variant="h6" noWrap component="div">
-            {title}
-          </Typography>
+
+          {/* Notification Dropdown Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleNotificationClose}
+            onClick={handleNotificationClose}
+            PaperProps={{
+              elevation: 0,
+              sx: {
+                overflow: "visible",
+                filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                mt: 1.5,
+                "& .MuiAvatar-root": {
+                  width: 32,
+                  height: 32,
+                  ml: -0.5,
+                  mr: 1,
+                },
+              },
+            }}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          >
+            <AnimatePresence>
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <motion.div
+                    key={notification.id}
+                    variants={notificationVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    <MenuItem
+                      sx={{
+                        minWidth: "300px",
+                        "&:hover": {
+                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                        },
+                      }}
+                    >
+                      <ListItemIcon>
+                        <Avatar src={notification.avatar} />
+                      </ListItemIcon>
+                      <Box>
+                        <Typography variant="body1">
+                          {notification.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {notification.message}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div
+                  variants={notificationVariants}
+                  initial="initial"
+                  animate="animate"
+                >
+                  <MenuItem>
+                    <Typography>No new notifications</Typography>
+                  </MenuItem>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -154,6 +281,7 @@ export const BaseLayout = ({
               width: drawerWidth,
               boxSizing: "border-box",
               height: "100vh",
+              overflow: "hidden",
             },
           }}
         >
@@ -177,6 +305,7 @@ export const BaseLayout = ({
               boxSizing: "border-box",
               height: "100vh",
               position: "relative",
+              overflow: "hidden",
             },
           }}
           open
