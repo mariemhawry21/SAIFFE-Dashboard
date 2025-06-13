@@ -17,22 +17,22 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-      {/* <Route element={<ProtectedRoute allowedRoles={["admin"]} />}> */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="patients" element={<Patients />} />
-        <Route path="doctors" element={<Doctors />} />
-        <Route path="adddoctor" element={<AddDoctor />} />
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="patients" element={<Patients />} />
+          <Route path="doctors" element={<Doctors />} />
+          <Route path="adddoctor" element={<AddDoctor />} />
+        </Route>
       </Route>
-      {/* </Route> */}
-      {/* <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}> */}
-      <Route path="/doctor" element={<DoctorLayout />}>
-        <Route index element={<DoctorDashboard />} />
-        <Route path="appointments" element={<Appointments />} />
-        <Route path="patients" element={<DoctorPatients />} />
-        <Route path="settings" element={<Settings />} />
+      <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
+        <Route path="/doctor" element={<DoctorLayout />}>
+          <Route index element={<DoctorDashboard />} />
+          <Route path="appointments" element={<Appointments />} />
+          <Route path="patients" element={<DoctorPatients />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Route>
-      {/* </Route> */}
     </Routes>
   );
 };
