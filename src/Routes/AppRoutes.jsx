@@ -35,7 +35,6 @@ const AppRoutes = () => {
         <Route path="settings" element={<Settings />} />
         <Route path="blog" element={<Blog />} />
       </Route>
-      {/* </Route> */}
     </Routes>
   );
 };
