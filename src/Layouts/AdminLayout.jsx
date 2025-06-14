@@ -20,6 +20,7 @@ const adminNavItems = [
   { text: "Dashboard", path: "/admin" },
   { text: "Doctors", path: "/admin/doctors" },
   { text: "Patients", path: "/admin/patients" },
+  { text: "Blog", path: "/admin/blog" },
 ];
 
 const AdminLayout = () => {
