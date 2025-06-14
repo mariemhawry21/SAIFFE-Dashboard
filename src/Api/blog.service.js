@@ -19,7 +19,7 @@ export const uploadImage = async (imageFile, onUploadProgress) => {
 
 export const createBlogPost = async (blogData) => {
   try {
-    const response = await API.post("/blog", blogData);
+    const response = await API.post("admin/blog", blogData);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Blog creation failed");

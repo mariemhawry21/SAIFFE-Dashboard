@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -17,12 +16,11 @@ import {
 } from "@mui/material";
 import { CloudUpload, Close } from "@mui/icons-material";
 import { createBlog } from "../../Store/Slices/blogSlice";
-
+import { toast } from "react-toastify";
 const Blog = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { status, error } = useSelector((state) => state.blog);
-  const { info } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -86,13 +84,13 @@ const Blog = () => {
     if (!validateForm()) return;
 
     try {
-      const result = await dispatch(
+      await dispatch(
         createBlog({
           title: formData.title,
           content: formData.content,
           imageFile: formData.imageFile,
-          authorId: info._id,
-          authorRole: info.role.toLowerCase(),
+          authorId: user._id,
+          authorRole: user.role.toLowerCase(),
           onUploadProgress: (progressEvent) => {
             const progress = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
@@ -101,10 +99,13 @@ const Blog = () => {
           },
         })
       ).unwrap();
-
-      if (result) {
-        navigate("/blogs");
-      }
+      toast.success("Blog posted successfully");
+      setFormData({
+        title: "",
+        content: "",
+        imageFile: null,
+        previewImage: "",
+      });
     } catch (err) {
       console.error("Blog creation error:", err);
     }
@@ -116,9 +117,9 @@ const Blog = () => {
 
   return (
     <motion.div
+      key="blog-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
       <Box sx={{ maxWidth: 800, mx: "auto", p: 3 }}>

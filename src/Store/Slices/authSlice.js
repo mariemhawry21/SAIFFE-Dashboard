@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
 import API from "../../Api/api";
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
@@ -25,41 +24,6 @@ export const loginUser = createAsyncThunk(
         error.response?.data || error.message || error
       );
 
-      return rejectWithValue(errorMessage);
-    }
-  }
-);
-
-export const registerUser = createAsyncThunk(
-  "auth/registerUser",
-  async (userData, { rejectWithValue }) => {
-    try {
-      const transformedUserData = {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        email: userData.email,
-        phone: userData.phone,
-        password: userData.password,
-      };
-
-      const response = await API.post("/auth/signup", transformedUserData);
-
-      const { user, token } = response.data.data;
-
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", token);
-
-      return { user, token };
-    } catch (error) {
-      let errorMessage = "An error occurred. Please try again.";
-      const serverMessage = error.response?.data?.message;
-
-      if (serverMessage === "Email already exists") {
-        errorMessage = "This email is already registered.";
-      } else if (serverMessage && serverMessage.includes("is not allowed")) {
-        errorMessage =
-          "Registration failed. Please check your input (e.g., correct field names).";
-      }
       return rejectWithValue(errorMessage);
     }
   }
@@ -114,22 +78,6 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Login failed";
-        state.isAuthenticated = false;
-      })
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || "Registration failed";
         state.isAuthenticated = false;
       });
   },

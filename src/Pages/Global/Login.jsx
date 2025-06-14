@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { TextField, Box, Button, Typography, Grid } from "@mui/material";
@@ -6,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { IconButton, InputAdornment } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearError } from "../../store/Slices/authSlice";
+import { loginUser, clearError } from "../../Store/Slices/authSlice";
 
 export default function Login() {
   const {
@@ -27,9 +26,7 @@ export default function Login() {
     console.log("User from Redux state:", user);
     dispatch(clearError());
     if (isAuthenticated && user) {
-
-     
-      const userRole = user.role.toLowerCase(); 
+      const userRole = user.role.toLowerCase();
       console.log("User Role (after toLowerCase):", userRole);
       if (userRole === "admin") {
         navigate("/admin", { replace: true });
@@ -171,34 +168,6 @@ export default function Login() {
               {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
-
-          <Box mt={2} textAlign="center">
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                style={{
-                  textDecoration: "none",
-                  color: "gray",
-                  fontWeight: "bold",
-                }}
-              >
-                Create an account
-              </Link>
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              <Link
-                to="/"
-                style={{
-                  textDecoration: "none",
-                  color: "gray",
-                  fontWeight: "bold",
-                }}
-              >
-                Back to Home
-              </Link>
-            </Typography>
-          </Box>
         </Box>
       </Box>
     </Grid>
