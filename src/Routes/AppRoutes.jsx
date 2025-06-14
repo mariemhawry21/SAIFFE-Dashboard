@@ -10,8 +10,9 @@ import Login from "../Pages/Global/Login";
 import DoctorPatients from "../Pages/Doctor/DoctorPatients";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Doctors from "../Pages/Admin/Doctors";
-import { Settings } from "@mui/icons-material";
+import Settings from "../Pages/Doctor/Settings";
 import AddDoctor from "../Pages/Admin/AddDoctor";
+import Blog from "../Pages/Global/Blog";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -23,6 +24,7 @@ const AppRoutes = () => {
           <Route path="patients" element={<Patients />} />
           <Route path="doctors" element={<Doctors />} />
           <Route path="adddoctor" element={<AddDoctor />} />
+          <Route path="blog" element={<Blog key="blog-page" />} />
         </Route>
       </Route>
       <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
@@ -31,6 +33,7 @@ const AppRoutes = () => {
           <Route path="appointments" element={<Appointments />} />
           <Route path="patients" element={<DoctorPatients />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="blog" element={<Blog key="blog-page" />} />
         </Route>
       </Route>
     </Routes>

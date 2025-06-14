@@ -6,6 +6,7 @@ const doctorNavItems = [
   { text: "Dashboard", path: "/doctor" },
   { text: "Appointments", path: "/doctor/appointments" },
   { text: "Patients", path: "/doctor/patients" },
+  { text: "Blog", path: "/doctor/blog" },
   { text: "Settings", path: "/doctor/settings" },
 ];
 
