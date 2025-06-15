@@ -54,12 +54,23 @@ const patientSlice = createSlice({
       })
       .addCase(fetchPatients.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload.data;
-        state.pagination = action.payload.pagination;
+
+        // تأكد أن البيانات مصفوفة قبل تعيينها
+        state.data = Array.isArray(action.payload.data) ? action.payload.data : [];
+
+        // تأكد من وجود pagination بشكل صحيح
+        state.pagination = action.payload.pagination
+          ? action.payload.pagination
+          : {
+              currentPage: 1,
+              totalPages: 0,
+              totalItems: 0,
+              itemsPerPage: 10,
+            };
       })
       .addCase(fetchPatients.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Failed to fetch patients";
       });
   },
 });
