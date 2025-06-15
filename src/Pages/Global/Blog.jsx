@@ -122,8 +122,8 @@ const Blog = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <Box sx={{ maxWidth: 800, mx: "auto", p: 3 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
+      <Box sx={{ maxWidth: "100%", p: 0 }}>
+        <Paper elevation={0} sx={{ p: 0 ,mt:2}}>
           <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
             Create New Blog Post
           </Typography>
@@ -228,7 +228,6 @@ const Blog = () => {
               variant="contained"
               color="primary"
               size="large"
-              fullWidth
               disabled={status === "loading"}
               sx={{ py: 1.5 }}
             >
