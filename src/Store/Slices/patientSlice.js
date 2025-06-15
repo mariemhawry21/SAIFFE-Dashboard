@@ -16,12 +16,14 @@ export const fetchPatients = createAsyncThunk(
 const patientSlice = createSlice({
   name: "patients",
   initialState: {
-    data: [],
-    pagination: {
-      currentPage: 1,
-      totalPages: 0,
-      totalItems: 0,
-      itemsPerPage: 10,
+    data: {
+      data: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: 10,
+      },
     },
     loading: false,
     error: null,
@@ -35,12 +37,14 @@ const patientSlice = createSlice({
       state.error = null;
     },
     resetPatients: (state) => {
-      state.data = [];
-      state.pagination = {
-        currentPage: 1,
-        totalPages: 0,
-        totalItems: 0,
-        itemsPerPage: 10,
+      state.data = {
+        data: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: 10,
+        },
       };
       state.error = null;
       state.searchTerm = "";
@@ -54,19 +58,15 @@ const patientSlice = createSlice({
       })
       .addCase(fetchPatients.fulfilled, (state, action) => {
         state.loading = false;
-
-        // تأكد أن البيانات مصفوفة قبل تعيينها
-        state.data = Array.isArray(action.payload.data) ? action.payload.data : [];
-
-        // تأكد من وجود pagination بشكل صحيح
-        state.pagination = action.payload.pagination
-          ? action.payload.pagination
-          : {
-              currentPage: 1,
-              totalPages: 0,
-              totalItems: 0,
-              itemsPerPage: 10,
-            };
+        state.data = {
+          data: Array.isArray(action.payload.data.data) ? action.payload.data.data : [],
+          pagination: action.payload.data.pagination ?? {
+            currentPage: 1,
+            totalPages: 0,
+            totalItems: 0,
+            itemsPerPage: 10,
+          },
+        };
       })
       .addCase(fetchPatients.rejected, (state, action) => {
         state.loading = false;

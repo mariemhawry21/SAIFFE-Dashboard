@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableHead,
@@ -9,12 +9,15 @@ import {
   Typography,
   Avatar,
   Box,
-  Chip,
-  useTheme
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton
 } from '@mui/material';
-import { User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Calendar, X } from 'lucide-react';
 
-const PatientRow = ({ patient, index, currentPage, itemsPerPage }) => {
+const PatientRow = ({ patient, index, currentPage, itemsPerPage, onClick }) => {
   const theme = useTheme();
 
   const getInitials = (firstName, lastName) => {
@@ -34,35 +37,16 @@ const PatientRow = ({ patient, index, currentPage, itemsPerPage }) => {
     return (currentPage - 1) * itemsPerPage + index + 1;
   };
 
-  const getAgeFromBirthDate = (birthDate) => {
-    if (!birthDate) return 'N/A';
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return `${age} years`;
-  };
-
-  const getGenderChipColor = (gender) => {
-    switch (gender?.toLowerCase()) {
-      case 'male': return 'primary';
-      case 'female': return 'secondary';
-      default: return 'default';
-    }
-  };
-
   return (
-    <TableRow 
-      hover 
-      sx={{ 
-        '&:hover': { 
-          bgcolor: theme.palette.action.hover 
+    <TableRow
+      hover
+      sx={{
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: theme.palette.action.hover
         }
       }}
+      onClick={() => onClick(patient)}
     >
       <TableCell>
         <Typography variant="body2" fontWeight="medium" color="textSecondary">
@@ -72,8 +56,9 @@ const PatientRow = ({ patient, index, currentPage, itemsPerPage }) => {
 
       <TableCell>
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar 
-            sx={{ 
+          <Avatar
+            src={patient.avatar}
+            sx={{
               bgcolor: theme.palette.primary.main,
               width: 40,
               height: 40,
@@ -116,33 +101,6 @@ const PatientRow = ({ patient, index, currentPage, itemsPerPage }) => {
       </TableCell>
 
       <TableCell>
-        <Chip
-          label={patient.gender || 'N/A'}
-          color={getGenderChipColor(patient.gender)}
-          size="small"
-          variant="outlined"
-        />
-      </TableCell>
-
-      <TableCell>
-        <Typography variant="body2" fontWeight="medium">
-          {formatDate(patient.date_of_birth)}
-        </Typography>
-        <Typography variant="caption" color="textSecondary">
-          {getAgeFromBirthDate(patient.date_of_birth)}
-        </Typography>
-      </TableCell>
-
-      <TableCell>
-        <Box display="flex" alignItems="center" gap={1}>
-          <MapPin size={16} color={theme.palette.text.secondary} />
-          <Typography variant="body2" noWrap title={patient.address}>
-            {patient.address || 'N/A'}
-          </Typography>
-        </Box>
-      </TableCell>
-
-      <TableCell>
         <Typography variant="body2" fontWeight="medium">
           {formatDate(patient.createdAt)}
         </Typography>
@@ -159,35 +117,139 @@ const PatientRow = ({ patient, index, currentPage, itemsPerPage }) => {
 
 const PatientTable = ({ patients, loading, currentPage, itemsPerPage }) => {
   const theme = useTheme();
+  const actualPatients = patients?.data?.data || patients || [];
+
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handlePatientClick = (patient) => {
+    setSelectedPatient(patient);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedPatient(null);
+  };
 
   return (
-    <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ bgcolor: theme.palette.grey[50] }}>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>#</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Patient</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Email</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Phone</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Gender</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Birth Date</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Address</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>Joined</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {patients.map((patient, index) => (
-            <PatientRow
-              key={patient._id}
-              patient={patient}
-              index={index}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: theme.palette.grey[50] }}>
+              <TableCell sx={{ fontWeight: 'bold' }}>#</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Patient</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Phone</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Joined</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {actualPatients.length > 0 ? (
+              actualPatients.map((patient, index) => (
+                <PatientRow
+                  key={patient._id}
+                  patient={patient}
+                  index={index}
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  onClick={handlePatientClick}
+                />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body1" color="textSecondary">
+                    No patients have been registered yet
+                  </Typography>
+                  <Typography variant="body2" mt={1}>
+                    New patients will appear here once they sign up
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Dialog for Patient Details */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Patient Details
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseDialog}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <X size={20} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedPatient && (
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Box display="flex" gap={2} alignItems="center">
+                <Avatar
+                  src={selectedPatient.avatar}
+                  sx={{ width: 56, height: 56 }}
+                >
+                  {selectedPatient.first_name[0]}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">
+                    {selectedPatient.first_name} {selectedPatient.last_name}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    ID: {selectedPatient._id}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2">Email</Typography>
+                <Typography variant="body2">{selectedPatient.email}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2">Phone</Typography>
+                <Typography variant="body2">{selectedPatient.phone || 'N/A'}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2">Registered At</Typography>
+                <Typography variant="body2">
+                  {new Date(selectedPatient.createdAt).toLocaleDateString()}
+                </Typography>
+              </Box>
+
+              {/* عرض معلومات إضافية لو عايزة */}
+              {selectedPatient.patient_profile && (
+                <>
+                  <Box>
+                    <Typography variant="subtitle2">Chronic Diseases</Typography>
+                    <Typography variant="body2">
+                      {selectedPatient.patient_profile.chronic_diseases?.join(', ') || 'None'}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2">Allergies</Typography>
+                    <Typography variant="body2">
+                      {selectedPatient.patient_profile.allergies?.join(', ') || 'None'}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
