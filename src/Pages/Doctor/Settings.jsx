@@ -4,6 +4,7 @@ import EditDoctorData from "../../Components/Doctor/EditDoctorData"; // You'll c
 import ResetPassword from "../../Components/Doctor/ResetPassword"; // You'll create this component
 import DoctorSchedule from "../../Components/Doctor/DoctorSchedule ";
 
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
 
