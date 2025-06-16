@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Tabs, Tab, Box, Typography, Paper, Container } from "@mui/material";
 import EditDoctorData from "../../Components/global/Doctor/EditDoctorData"; // You'll create this component
 import ResetPassword from "../../Components/global/Doctor/ResetPassword"; // You'll create this component
-import DoctorSchedule from "../../Components/global/Doctor/DoctorSchedule ";
+import DoctorSchedule from "../../Components/global/Doctor/DoctorSchedule";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
