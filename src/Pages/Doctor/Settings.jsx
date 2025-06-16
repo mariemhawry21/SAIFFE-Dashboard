@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Tabs, Tab, Box, Typography, Paper, Container } from "@mui/material";
-import EditDoctorData from "../../Components/global/Doctor/EditDoctorData"; // You'll create this component
-import ResetPassword from "../../Components/global/Doctor/ResetPassword"; // You'll create this component
-import DoctorSchedule from "../../Components/global/Doctor/DoctorSchedule ";
+import EditDoctorData from "../../Components/Doctor/EditDoctorData"; // You'll create this component
+import ResetPassword from "../../Components/Doctor/ResetPassword"; // You'll create this component
+import DoctorSchedule from "../../Components/Doctor/DoctorSchedule ";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -14,9 +14,9 @@ const Settings = () => {
   return (
     <Box maxWidth="100%" sx={{ mt: 2, p: 0 }}>
       <Paper elevation={0} sx={{ p: 0 }}>
-        <Typography variant="h4" gutterBottom>
+        {/* <Typography variant="h4" gutterBottom>
           Settings
-        </Typography>
+        </Typography> */}
 
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <Tabs
