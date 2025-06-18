@@ -9,7 +9,7 @@ const SearchBar = ({ onSearch, loading }) => {
 
   const handleInputChange = (e) => {
     const value = e.target.value;
-    setLocalSearch(value); // خلي الكتابة محليًا بس
+    setLocalSearch(value);
 
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
