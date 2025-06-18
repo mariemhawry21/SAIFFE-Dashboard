@@ -5,6 +5,8 @@ import doctorDashboardReducer from "./Slices/doctorDashboard";
 import adminDashboardReducer from "./Slices/adminDashboard";
 
 import patientReducer from "./Slices/patientSlice";
+import doctorPatientReducer from "./Slices/DoctorPatients";
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -12,5 +14,6 @@ export const store = configureStore({
     doctorDashboard: doctorDashboardReducer,
     adminDashboard: adminDashboardReducer,
     patients: patientReducer,
+    doctorPatients: doctorPatientReducer,
   },
 });

@@ -5,6 +5,7 @@ import AdminDashboard from "../Pages/Admin/AdminDashboard";
 import Patients from "../Pages/Admin/Patients";
 import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
 import Appointments from "../Pages/Doctor/Appointments";
+import PatientDetails from "../Pages/Doctor/PatientDetails";
 import ProtectedRoute from "../Components/global/ProtectedRoutes";
 import Login from "../Pages/Global/Login";
 import DoctorPatients from "../Pages/Doctor/DoctorPatients";
@@ -32,6 +33,7 @@ const AppRoutes = () => {
           <Route index element={<DoctorDashboard />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="patients" element={<DoctorPatients />} />
+          <Route path="my-patients/:patientId" element={<PatientDetails />} />
           <Route path="settings" element={<Settings />} />
           <Route path="blog" element={<Blog key="blog-page" />} />
         </Route>
