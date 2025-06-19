@@ -1,4 +1,3 @@
-// src/components/admin/AdminDashboard.jsx
 import React, { useEffect } from "react";
 import {
   Box,

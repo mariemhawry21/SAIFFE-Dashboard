@@ -1,30 +1,40 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TextField, InputAdornment, CircularProgress, useTheme } from '@mui/material';
 import { Search } from 'lucide-react';
 
-const SearchBar = ({ onSearch, loading }) => {
+const SearchBar = React.memo(({ onSearch, loading }) => {
   const theme = useTheme();
   const searchTimeout = useRef(null);
   const [localSearch, setLocalSearch] = useState('');
 
-  const handleInputChange = (e) => {
+  // Memoized input change handler
+  const handleInputChange = useCallback((e) => {
     const value = e.target.value;
     setLocalSearch(value);
 
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    // Clear existing timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
 
+    // Handle empty search immediately
     if (value.trim() === '') {
       onSearch('');
-    } else {
-      searchTimeout.current = setTimeout(() => {
-        onSearch(value);
-      }, 500);
+      return;
     }
-  };
 
+    // Debounce search for non-empty values
+    searchTimeout.current = setTimeout(() => {
+      onSearch(value.trim());
+    }, 500); // Increased debounce time for better performance
+  }, [onSearch]);
+
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
     };
   }, []);
 
@@ -58,6 +68,8 @@ const SearchBar = ({ onSearch, loading }) => {
       }}
     />
   );
-};
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar;

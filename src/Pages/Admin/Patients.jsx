@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -25,75 +25,86 @@ const Patients = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const {
-    data: patientsResponse, // Changed from patients to patientsResponse
-    pagination,
+    data: patientsResponse,
     loading,
     error,
     searchTerm,
+    initialized,
   } = useSelector((state) => state.patients);
 
-  // Extract patient data from nested response
-  const patients = patientsResponse?.data || []; // Access the nested data array
-  const responsePagination = patientsResponse?.pagination || {}; // Access nested pagination
+  // Memoize derived values to prevent unnecessary re-renders
+  const patientsData = useMemo(() => {
+    return {
+      patients: patientsResponse?.data || [],
+      pagination: patientsResponse?.pagination || {
+        currentPage: 1,
+        itemsPerPage: 10,
+        totalItems: 0,
+        totalPages: 1,
+      }
+    };
+  }, [patientsResponse]);
 
-  // Use response pagination if available, fallback to top-level pagination
-  const currentPage =
-    responsePagination.currentPage || pagination?.currentPage || 1;
-  const itemsPerPage =
-    responsePagination.itemsPerPage || pagination?.itemsPerPage || 10;
-  const totalItems =
-    responsePagination.totalItems || pagination?.totalItems || 0;
-  const totalPages =
-    responsePagination.totalPages || pagination?.totalPages || 1;
+  const { patients, pagination } = patientsData;
+  const { currentPage, itemsPerPage, totalItems, totalPages } = pagination;
 
+  // Memoized fetch function to prevent unnecessary re-creations
+  const fetchPatientsData = useCallback((page = 1, limit = 10, search = "") => {
+    console.log('Dispatching fetchPatients with:', { page, limit, search });
+    dispatch(fetchPatients({ page, limit, search }));
+  }, [dispatch]);
+
+  // Initial load with proper dependencies
   useEffect(() => {
-    dispatch(
-      fetchPatients({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchTerm,
-      })
-    );
-  }, [dispatch, currentPage, itemsPerPage, searchTerm]);
+    if (!initialized) {
+      console.log('Initial load - fetching patients');
+      fetchPatientsData(1, 10, "");
+    }
+  }, [initialized, fetchPatientsData]);
 
-  const handleSearch = (value) => {
+  // Optimized search handler with debouncing
+  const handleSearch = useCallback((value) => {
+    console.log('Search triggered with value:', value);
     dispatch(setSearchTerm(value));
-    dispatch(
-      fetchPatients({
-        page: 1,
-        limit: itemsPerPage,
-        search: value,
-      })
-    );
-  };
+    // Reset to page 1 when searching
+    fetchPatientsData(1, itemsPerPage, value);
+  }, [dispatch, fetchPatientsData, itemsPerPage]);
 
-  const handlePageChange = (page) => {
-    dispatch(
-      fetchPatients({
-        page,
-        limit: itemsPerPage,
-        search: searchTerm,
-      })
-    );
+  // Optimized page change handler
+  const handlePageChange = useCallback((page) => {
+    console.log('Page change to:', page);
+    fetchPatientsData(page, itemsPerPage, searchTerm);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [fetchPatientsData, itemsPerPage, searchTerm]);
 
-  const handleSearchTermChange = (term) => {
-    dispatch(setSearchTerm(term));
-  };
-
-  const handleRetry = () => {
+  // Optimized retry handler
+  const handleRetry = useCallback(() => {
+    console.log('Retry triggered');
     dispatch(clearError());
-    dispatch(
-      fetchPatients({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchTerm,
-      })
-    );
-  };
+    fetchPatientsData(currentPage, itemsPerPage, searchTerm);
+  }, [dispatch, fetchPatientsData, currentPage, itemsPerPage, searchTerm]);
 
-  const EmptyState = () => (
+  // Optimized clear search handler
+  const handleClearSearch = useCallback(() => {
+    console.log('Clear search triggered');
+    dispatch(setSearchTerm(""));
+    fetchPatientsData(1, itemsPerPage, "");
+  }, [dispatch, fetchPatientsData, itemsPerPage]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Component state:', {
+      loading,
+      error,
+      initialized,
+      patientsCount: patients.length,
+      totalItems,
+      searchTerm
+    });
+  }, [loading, error, initialized, patients.length, totalItems, searchTerm]);
+
+  // Memoized empty state component
+  const EmptyState = useMemo(() => (
     <Box
       display="flex"
       flexDirection="column"
@@ -122,12 +133,7 @@ const Patients = () => {
       </Typography>
       {searchTerm && (
         <Button
-          onClick={() => {
-            dispatch(setSearchTerm(""));
-            dispatch(
-              fetchPatients({ page: 1, limit: itemsPerPage, search: "" })
-            );
-          }}
+          onClick={handleClearSearch}
           sx={{ mt: 2 }}
           color="primary"
         >
@@ -135,7 +141,18 @@ const Patients = () => {
         </Button>
       )}
     </Box>
-  );
+  ), [theme.palette.grey, searchTerm, handleClearSearch]);
+
+  // Show loading state during initial load
+  if (!initialized && loading) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", p: 3 }}>
+        <Paper elevation={1}>
+          <TableSkeleton rows={10} />
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", p: 3 }}>
@@ -261,13 +278,13 @@ const Patients = () => {
         )}
 
         {/* Table */}
-        {loading ? (
+        {loading && !initialized ? (
           <TableSkeleton rows={10} />
         ) : patients.length === 0 ? (
-          <EmptyState />
+          EmptyState
         ) : (
           <PatientTable
-            patients={patients} // Now passing the correct array
+            patients={patients}
             loading={loading}
             currentPage={currentPage}
             itemsPerPage={itemsPerPage}
@@ -290,4 +307,4 @@ const Patients = () => {
   );
 };
 
-export default Patients;
+export default React.memo(Patients);

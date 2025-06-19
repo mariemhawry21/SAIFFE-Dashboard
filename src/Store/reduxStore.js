@@ -1,4 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
+import logger from 'redux-logger';
+
 import authReducer from "./Slices/authSlice";
 import blogReducer from "./Slices/blogSlice";
 import doctorDashboardReducer from "./Slices/doctorDashboard";
@@ -16,4 +18,6 @@ export const store = configureStore({
     patients: patientReducer,
     doctorPatients: doctorPatientReducer,
   },
+   middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(logger),
 });
