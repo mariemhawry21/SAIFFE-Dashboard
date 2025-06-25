@@ -113,8 +113,35 @@ const PatientDetails = () => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
+  // دالة مساعدة للحصول على تاريخ الميلاد من مصادر متعددة
+  const getBirthDate = (patient) => {
+    const possibleDates = [
+      patient.birth_date,
+      patient.patient_profile?.birth_date,
+      patient.patient_profile?.date_of_birth,
+      patient.date_of_birth
+    ];
+    
+    for (let date of possibleDates) {
+      if (date) {
+        return date;
+      }
+    }
+    return null;
+  };
+
+  // دالة مساعدة للحصول على الجنس من مصادر متعددة
+  const getGender = (patient) => {
+    return patient.gender || patient.patient_profile?.gender || null;
+  };
+
+  // دالة مساعدة للحصول على الرقم القومي
+  const getNationalId = (patient) => {
+    return patient.patient_profile?.national_id || patient.national_id || null;
+  };
+
   const calculateAge = (birthDate) => {
-    if (!birthDate) return 'N/A';
+    if (!birthDate) return null;
     const today = new Date();
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
@@ -123,6 +150,20 @@ const PatientDetails = () => {
       age--;
     }
     return age;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return null;
+    }
   };
 
   if (loading.patientDetails) {
@@ -177,6 +218,13 @@ const PatientDetails = () => {
 
   const hasChronicDiseases = patient.patient_profile?.chronic_diseases?.length > 0;
   const hasAllergies = patient.patient_profile?.allergies?.length > 0;
+  
+  // استخراج البيانات باستخدام الدوال المساعدة
+  const birthDate = getBirthDate(patient);
+  const gender = getGender(patient);
+  const nationalId = getNationalId(patient);
+  const age = calculateAge(birthDate);
+  const formattedBirthDate = formatDate(birthDate);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", p: 3 }}>
@@ -248,32 +296,60 @@ const PatientDetails = () => {
                         ID: {patient._id?.slice(-8)}
                       </Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={0.5}>
-                      <Calendar size={16} color={theme.palette.text.secondary} />
-                      <Typography variant="body2" color="textSecondary">
-Age: {calculateAge(patient.patient_profile?.date_of_birth)} years
-                      </Typography>
-                    </Box>
+                    
+                    {age && (
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <Calendar size={16} color={theme.palette.text.secondary} />
+                        <Typography variant="body2" color="textSecondary">
+                          Age: {age} years
+                        </Typography>
+                      </Box>
+                    )}
+                    
                     <Box display="flex" alignItems="center" gap={0.5}>
                       <Mail size={16} color={theme.palette.text.secondary} />
                       <Typography variant="body2" color="textSecondary">
                         {patient.email}
                       </Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={0.5}>
-                      <Phone size={16} color={theme.palette.text.secondary} />
-                      <Typography variant="body2" color="textSecondary">
-                        {patient.phone || 'N/A'}
-                      </Typography>
-                    </Box>
+                    
+                    {patient.phone && (
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <Phone size={16} color={theme.palette.text.secondary} />
+                        <Typography variant="body2" color="textSecondary">
+                          {patient.phone}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
 
                   <Box display="flex" gap={1} flexWrap="wrap">
-                    <Chip
-                      label={patient.gender || 'Not specified'}
-                      variant="outlined"
-                      size="small"
-                    />
+                    {gender && (
+                      <Chip
+                        label={gender.charAt(0).toUpperCase() + gender.slice(1)}
+                        variant="outlined"
+                        size="small"
+                      />
+                    )}
+                    
+                    {formattedBirthDate && (
+                      <Chip
+                        label={`Born: ${formattedBirthDate}`}
+                        variant="outlined"
+                        size="small"
+                        color="info"
+                      />
+                    )}
+                    
+                    {nationalId && (
+                      <Chip
+                        label={`ID: ${nationalId}`}
+                        variant="outlined"
+                        size="small"
+                        color="secondary"
+                      />
+                    )}
+                    
                     {hasChronicDiseases && (
                       <Chip
                         label="Chronic Diseases"
@@ -283,6 +359,7 @@ Age: {calculateAge(patient.patient_profile?.date_of_birth)} years
                         icon={<Heart size={12} />}
                       />
                     )}
+                    
                     {hasAllergies && (
                       <Chip
                         label="Allergies"
@@ -338,7 +415,7 @@ Age: {calculateAge(patient.patient_profile?.date_of_birth)} years
           </Tabs>
         </Box>
 
-    <TabPanel value={tabValue} index={0}>
+        <TabPanel value={tabValue} index={0}>
           <PatientOverview patient={patient} />
         </TabPanel>
         <TabPanel value={tabValue} index={1}>

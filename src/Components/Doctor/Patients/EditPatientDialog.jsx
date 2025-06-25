@@ -21,7 +21,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { X as Close, Heart, AlertTriangle, FileText } from "lucide-react";
-import { updatePatientProfileAsync, clearErrors } from "../../../Store/Slices/DoctorPatients";
+import { updatePatientProfileAsync, clearErrors, fetchPatientDetails } from "../../../Store/Slices/DoctorPatients";
 import { toast } from "react-toastify";
 
 const EditPatientDialog = ({ open, onClose, patient }) => {
@@ -59,18 +59,41 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
   const [newAllergy, setNewAllergy] = useState("");
   const [newMedication, setNewMedication] = useState("");
 
+  // دالة مساعدة لاستخراج تاريخ الميلاد من مصادر متعددة
+  const extractBirthDate = (patient) => {
+    const possibleDates = [
+      patient.birth_date,
+      patient.patient_profile?.birth_date,
+      patient.patient_profile?.date_of_birth,
+      patient.date_of_birth
+    ];
+    
+    for (let date of possibleDates) {
+      if (date) {
+        // تنسيق التاريخ للـ input field
+        return date.includes('T') ? date.split('T')[0] : date;
+      }
+    }
+    return "";
+  };
+
+  // دالة مساعدة لاستخراج الجنس من مصادر متعددة
+  const extractGender = (patient) => {
+    return patient.gender || patient.patient_profile?.gender || "";
+  };
+
   useEffect(() => {
     if (patient) {
-      // تحديث تاريخ الميلاد من patient.birth_date أو patient.patient_profile.date_of_birth
-      const birthDate = patient.birth_date || patient.patient_profile?.date_of_birth;
+      const birthDate = extractBirthDate(patient);
+      const gender = extractGender(patient);
       
       setFormData({
         first_name: patient.first_name || "",
         last_name: patient.last_name || "",
         email: patient.email || "",
         phone: patient.phone || "",
-        gender: patient.gender || patient.patient_profile?.gender || "",
-        birth_date: birthDate ? birthDate.split('T')[0] : "",
+        gender: gender,
+        birth_date: birthDate,
         patient_profile: {
           address: patient.patient_profile?.address || "",
           blood_type: patient.patient_profile?.blood_type || "",
@@ -195,15 +218,29 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
 
   const handleSubmit = async () => {
     try {
-      // تحضير البيانات للإرسال - تحويل birth_date إلى date_of_birth في patient_profile
+      // التأكد من وجود البيانات الأساسية
+      if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()) {
+        toast.error("Please fill in all required fields (First Name, Last Name, Email)");
+        return;
+      }
+
+      // تحضير البيانات للإرسال مع توحيد جميع الحقول
       const submitData = {
         ...formData,
+        // حفظ في المستوى الأعلى للمريض
+        birth_date: formData.birth_date,
+        date_of_birth: formData.birth_date, // نسخة احتياطية
+        gender: formData.gender,
         patient_profile: {
           ...formData.patient_profile,
+          // حفظ في patient_profile أيضاً لضمان التوافق
+          birth_date: formData.birth_date,
           date_of_birth: formData.birth_date,
           gender: formData.gender,
         }
       };
+
+      console.log("Submitting data:", submitData); // للتشخيص
 
       const result = await dispatch(updatePatientProfileAsync({
         patientId: patient._id,
@@ -212,9 +249,16 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
 
       if (result.type === 'doctorPatients/updatePatientProfile/fulfilled') {
         toast.success("Patient profile updated successfully");
+        
+        // إعادة تحميل بيانات المريض لضمان التحديث
+        await dispatch(fetchPatientDetails(patient._id));
+        
         onClose();
+      } else if (result.type === 'doctorPatients/updatePatientProfile/rejected') {
+        toast.error(result.payload || "Failed to update patient profile");
       }
     } catch (error) {
+      console.error("Error updating patient:", error);
       toast.error("Failed to update patient profile");
     }
   };
@@ -230,6 +274,11 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="h6">Edit Patient Information</Typography>
+            {patient && (
+              <Typography variant="body2" color="textSecondary">
+                - {patient.first_name} {patient.last_name}
+              </Typography>
+            )}
           </Box>
           <IconButton onClick={handleClose} size="small">
             <Close size={20} />
@@ -259,6 +308,8 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               value={formData.first_name}
               onChange={(e) => handleInputChange('first_name', e.target.value)}
               required
+              error={!formData.first_name.trim()}
+              helperText={!formData.first_name.trim() ? "First name is required" : ""}
             />
           </Grid>
           
@@ -269,6 +320,8 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               value={formData.last_name}
               onChange={(e) => handleInputChange('last_name', e.target.value)}
               required
+              error={!formData.last_name.trim()}
+              helperText={!formData.last_name.trim() ? "Last name is required" : ""}
             />
           </Grid>
           
@@ -280,6 +333,8 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
+              error={!formData.email.trim()}
+              helperText={!formData.email.trim() ? "Email is required" : ""}
             />
           </Grid>
           
@@ -300,6 +355,9 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
                 onChange={(e) => handleInputChange('gender', e.target.value)}
                 label="Gender"
               >
+                <MenuItem value="">
+                  <em>Select Gender</em>
+                </MenuItem>
                 <MenuItem value="male">Male</MenuItem>
                 <MenuItem value="female">Female</MenuItem>
                 <MenuItem value="other">Other</MenuItem>
@@ -315,6 +373,9 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               value={formData.birth_date}
               onChange={(e) => handleInputChange('birth_date', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              inputProps={{
+                max: new Date().toISOString().split('T')[0] // منع اختيار تاريخ مستقبلي
+              }}
             />
           </Grid>
 
@@ -346,12 +407,26 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
           </Grid>
           
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Blood Type"
-              value={formData.patient_profile.blood_type}
-              onChange={(e) => handleInputChange('patient_profile.blood_type', e.target.value)}
-            />
+            <FormControl fullWidth>
+              <InputLabel>Blood Type</InputLabel>
+              <Select
+                value={formData.patient_profile.blood_type}
+                onChange={(e) => handleInputChange('patient_profile.blood_type', e.target.value)}
+                label="Blood Type"
+              >
+                <MenuItem value="">
+                  <em>Select Blood Type</em>
+                </MenuItem>
+                <MenuItem value="A+">A+</MenuItem>
+                <MenuItem value="A-">A-</MenuItem>
+                <MenuItem value="B+">B+</MenuItem>
+                <MenuItem value="B-">B-</MenuItem>
+                <MenuItem value="AB+">AB+</MenuItem>
+                <MenuItem value="AB-">AB-</MenuItem>
+                <MenuItem value="O+">O+</MenuItem>
+                <MenuItem value="O-">O-</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
 
           <Grid item xs={12} sm={6}>
@@ -361,6 +436,7 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               type="number"
               value={formData.patient_profile.height}
               onChange={(e) => handleInputChange('patient_profile.height', e.target.value)}
+              inputProps={{ min: 0, max: 300 }}
             />
           </Grid>
 
@@ -371,6 +447,7 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               type="number"
               value={formData.patient_profile.weight}
               onChange={(e) => handleInputChange('patient_profile.weight', e.target.value)}
+              inputProps={{ min: 0, max: 500 }}
             />
           </Grid>
 
@@ -415,6 +492,12 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
                 value={newChronicDisease}
                 onChange={(e) => setNewChronicDisease(e.target.value)}
                 size="small"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addChronicDisease();
+                  }
+                }}
               />
               <Button
                 variant="outlined"
@@ -449,6 +532,12 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
                 value={newAllergy}
                 onChange={(e) => setNewAllergy(e.target.value)}
                 size="small"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addAllergy();
+                  }
+                }}
               />
               <Button
                 variant="outlined"
@@ -483,6 +572,12 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
                 value={newMedication}
                 onChange={(e) => setNewMedication(e.target.value)}
                 size="small"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addMedication();
+                  }
+                }}
               />
               <Button
                 variant="outlined"
@@ -540,6 +635,7 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
               onChange={(e) => handleInputChange('patient_profile.notes', e.target.value)}
               multiline
               rows={4}
+              placeholder="Enter any additional medical notes or observations..."
             />
           </Grid>
         </Grid>
@@ -552,7 +648,7 @@ const EditPatientDialog = ({ open, onClose, patient }) => {
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading.updateProfile}
+          disabled={loading.updateProfile || !formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()}
           startIcon={loading.updateProfile ? <CircularProgress size={20} /> : null}
         >
           {loading.updateProfile ? "Updating..." : "Update Patient"}

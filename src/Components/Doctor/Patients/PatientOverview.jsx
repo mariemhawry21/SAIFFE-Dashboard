@@ -1,14 +1,15 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Card,
   CardContent,
   Typography,
   Grid,
+  Divider,
   Chip,
   useTheme,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 import {
   User,
   Calendar,
@@ -17,76 +18,40 @@ import {
   MapPin,
   Heart,
   AlertTriangle,
-  Activity,
   FileText,
-  Clock,
+  Shield,
+  Activity,
+  Users,
   Info,
   UserCheck,
-  Shield,
-} from 'lucide-react';
-
-const InfoCard = ({ title, icon, children, color = 'primary' }) => {
-  const theme = useTheme();
-
-  return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
-      <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <Box
-            sx={{
-              p: 1,
-              borderRadius: 1,
-              bgcolor: `${color}.main`,
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {icon}
-          </Box>
-          <Typography variant="h6" fontWeight="bold">
-            {title}
-          </Typography>
-        </Box>
-        {children}
-      </CardContent>
-    </Card>
-  );
-};
-
-const InfoItem = ({ icon, label, value, color }) => {
-  const theme = useTheme();
-
-  return (
-    <Box display="flex" alignItems="center" gap={2} py={1}>
-      <Box color={color || theme.palette.text.secondary}>{icon}</Box>
-      <Box flex={1}>
-        <Typography variant="body2" color="textSecondary" fontSize="0.75rem">
-          {label}
-        </Typography>
-        <Typography variant="body1" fontWeight="medium">
-          {value || 'Not specified'}
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
+  Clock,
+} from "lucide-react";
 
 const PatientOverview = ({ patient }) => {
   const theme = useTheme();
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not specified';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  // Utility functions for extracting data from multiple sources
+  const getBirthDate = (patient) => {
+    const possibleDates = [
+      patient.birth_date,
+      patient.patient_profile?.birth_date,
+      patient.patient_profile?.date_of_birth,
+      patient.date_of_birth
+    ];
+    
+    return possibleDates.find(date => date) || null;
+  };
+
+  const getGender = (patient) => {
+    return patient.gender || patient.patient_profile?.gender || null;
+  };
+
+  const getNationalId = (patient) => {
+    return patient.patient_profile?.national_id || patient.national_id || null;
   };
 
   const calculateAge = (birthDate) => {
-    if (!birthDate) return 'Not specified';
+    if (!birthDate) return null;
     const today = new Date();
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
@@ -94,89 +59,251 @@ const PatientOverview = ({ patient }) => {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    return `${age} years old`;
+    return age;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (error) {
+      return "Not specified";
+    }
   };
 
   const getBloodTypeColor = (bloodType) => {
     const colors = {
-      'A+': 'success',
-      'A-': 'success',
-      'B+': 'info',
-      'B-': 'info',
-      'AB+': 'warning',
-      'AB-': 'warning',
-      'O+': 'error',
-      'O-': 'error',
+      "A+": "success",
+      "A-": "success", 
+      "B+": "info",
+      "B-": "info",
+      "AB+": "warning",
+      "AB-": "warning",
+      "O+": "error",
+      "O-": "error",
     };
-    return colors[bloodType] || 'default';
+    return colors[bloodType] || "default";
   };
 
+  // Extract data using utility functions
+  const birthDate = getBirthDate(patient);
+  const gender = getGender(patient);
+  const nationalId = getNationalId(patient);
+  const age = calculateAge(birthDate);
+  const formattedBirthDate = formatDate(birthDate);
   const profile = patient.patient_profile || {};
+
+  // InfoCard component for consistent styling
+  const InfoCard = ({ title, icon: Icon, children, color = "primary" }) => (
+    <Card variant="outlined" sx={{ height: "100%" }}>
+      <CardContent>
+        <Box display="flex" alignItems="center" gap={1} mb={2}>
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: 1,
+              bgcolor: `${color}.main`,
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon size={20} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold">
+            {title}
+          </Typography>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        {children}
+      </CardContent>
+    </Card>
+  );
+
+  // InfoItem component for consistent data display
+  const InfoItem = ({ icon: Icon, label, value, color }) => (
+    <Box display="flex" alignItems="center" gap={2} py={1}>
+      <Box color={color || theme.palette.text.secondary}>
+        <Icon size={16} />
+      </Box>
+      <Box flex={1}>
+        <Typography variant="body2" color="textSecondary" fontSize="0.75rem">
+          {label}
+        </Typography>
+        <Typography variant="body1" fontWeight="medium">
+          {value || "Not specified"}
+        </Typography>
+      </Box>
+    </Box>
+  );
+
+  // Medical conditions display component
+  const MedicalConditions = ({ title, items, color, icon: Icon }) => (
+    <Box mb={2}>
+      <Typography variant="body2" color="textSecondary" gutterBottom>
+        {title}
+      </Typography>
+      {items?.length > 0 ? (
+        <Box display="flex" flexWrap="wrap" gap={1}>
+          {items.map((item, index) => (
+            <Chip
+              key={index}
+              label={item}
+              color={color}
+              variant="outlined"
+              size="small"
+              icon={<Icon size={12} />}
+            />
+          ))}
+        </Box>
+      ) : (
+        <Typography variant="body2" color="textSecondary" fontStyle="italic">
+          No {title.toLowerCase()} recorded
+        </Typography>
+      )}
+    </Box>
+  );
 
   return (
     <Box>
       <Grid container spacing={3}>
+        {/* Personal Information */}
         <Grid item xs={12} md={6}>
-          <InfoCard title="Personal Information" icon={<User size={20} />} color="primary">
+          <InfoCard title="Personal Information" icon={User} color="primary">
             <Box display="flex" flexDirection="column" gap={1}>
-              <InfoItem icon={<User size={16} />} label="Full Name" value={`${patient.first_name} ${patient.last_name}`} />
-              <InfoItem icon={<Calendar size={16} />} label="Date of Birth" value={formatDate(patient.birth_date)} />
-              <InfoItem icon={<Info size={16} />} label="Age" value={calculateAge(patient.birth_date)} />
-              <InfoItem icon={<UserCheck size={16} />} label="Gender" value={patient.gender} />
-              <InfoItem icon={<Shield size={16} />} label="National ID" value={profile.national_id} />
+              <InfoItem
+                icon={User}
+                label="Full Name"
+                value={`${patient.first_name || ""} ${patient.last_name || ""}`.trim()}
+              />
+              <InfoItem
+                icon={Calendar}
+                label="Date of Birth"
+                value={formattedBirthDate}
+              />
+              <InfoItem
+                icon={Info}
+                label="Age"
+                value={age ? `${age} years old` : null}
+              />
+              <InfoItem
+                icon={UserCheck}
+                label="Gender"
+                value={gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : null}
+              />
+              <InfoItem
+                icon={Shield}
+                label="National ID"
+                value={nationalId}
+              />
             </Box>
           </InfoCard>
         </Grid>
 
+        {/* Contact Information */}
         <Grid item xs={12} md={6}>
-          <InfoCard title="Contact Information" icon={<Phone size={20} />} color="secondary">
+          <InfoCard title="Contact Information" icon={Phone} color="secondary">
             <Box display="flex" flexDirection="column" gap={1}>
-              <InfoItem icon={<Mail size={16} />} label="Email Address" value={patient.email} />
-              <InfoItem icon={<Phone size={16} />} label="Phone Number" value={patient.phone} />
-              <InfoItem icon={<MapPin size={16} />} label="Address" value={profile.address} />
               <InfoItem
-                icon={<Info size={16} />}
+                icon={Mail}
+                label="Email Address"
+                value={patient.email}
+              />
+              <InfoItem
+                icon={Phone}
+                label="Phone Number"
+                value={patient.phone}
+              />
+              <InfoItem
+                icon={MapPin}
+                label="Address"
+                value={profile.address}
+              />
+              <InfoItem
+                icon={Users}
                 label="Emergency Contact"
                 value={
                   profile.emergency_contact
-                    ? `${profile.emergency_contact.name} (${profile.emergency_contact.relationship}) - ${profile.emergency_contact.phone}`
-                    : 'Not specified'
+                    ? `${profile.emergency_contact.name} (${profile.emergency_contact.relationship})`
+                    : null
                 }
               />
-              <InfoItem icon={<Phone size={16} />} label="Emergency Phone" value={profile.emergency_phone} />
+              <InfoItem
+                icon={Phone}
+                label="Emergency Phone"
+                value={profile.emergency_contact?.phone}
+              />
             </Box>
           </InfoCard>
         </Grid>
 
+        {/* Medical Information */}
         <Grid item xs={12} md={6}>
-          <InfoCard title="Medical Information" icon={<Activity size={20} />} color="error">
+          <InfoCard title="Medical Information" icon={Activity} color="error">
             <Box display="flex" flexDirection="column" gap={2}>
+              {/* Blood Type */}
               <Box>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
                   Blood Type
                 </Typography>
                 {profile.blood_type ? (
-                  <Chip label={profile.blood_type} color={getBloodTypeColor(profile.blood_type)} variant="outlined" size="small" />
+                  <Chip
+                    label={profile.blood_type}
+                    color={getBloodTypeColor(profile.blood_type)}
+                    variant="outlined"
+                    size="small"
+                  />
                 ) : (
-                  <Typography variant="body2" color="textSecondary">Not specified</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Not specified
+                  </Typography>
                 )}
               </Box>
 
+              {/* Height & Weight */}
               <Box>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  Height & Weight
+                  Physical Measurements
                 </Typography>
-                <Box display="flex" gap={2}>
-                  <Typography variant="body1">{profile.height ? `${profile.height} cm` : 'N/A'}</Typography>
-                  <Typography variant="body1">{profile.weight ? `${profile.weight} kg` : 'N/A'}</Typography>
+                <Box display="flex" gap={2} flexWrap="wrap">
+                  {profile.height && (
+                    <Chip
+                      label={`Height: ${profile.height} cm`}
+                      variant="outlined"
+                      size="small"
+                      color="info"
+                    />
+                  )}
+                  {profile.weight && (
+                    <Chip
+                      label={`Weight: ${profile.weight} kg`}
+                      variant="outlined"
+                      size="small"
+                      color="info"
+                    />
+                  )}
+                  {!profile.height && !profile.weight && (
+                    <Typography variant="body2" color="textSecondary">
+                      Not specified
+                    </Typography>
+                  )}
                 </Box>
               </Box>
 
+              {/* Insurance Information */}
               <Box>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
                   Insurance Information
                 </Typography>
-                <Typography variant="body1">{profile.insurance_provider || 'No insurance'}</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {profile.insurance_provider || "No insurance"}
+                </Typography>
                 {profile.insurance_number && (
                   <Typography variant="body2" color="textSecondary">
                     Policy: {profile.insurance_number}
@@ -187,81 +314,52 @@ const PatientOverview = ({ patient }) => {
           </InfoCard>
         </Grid>
 
+        {/* Health Conditions */}
         <Grid item xs={12} md={6}>
-          <InfoCard title="Health Conditions" icon={<Heart size={20} />} color="warning">
+          <InfoCard title="Health Conditions" icon={Heart} color="warning">
             <Box display="flex" flexDirection="column" gap={2}>
-              <Box>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  Chronic Diseases
-                </Typography>
-                {profile.chronic_diseases?.length > 0 ? (
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {profile.chronic_diseases.map((disease, index) => (
-                      <Chip key={index} label={disease} color="warning" variant="outlined" size="small" icon={<Heart size={12} />} />
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="textSecondary">No chronic diseases recorded</Typography>
-                )}
-              </Box>
-
-              <Box>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  Allergies
-                </Typography>
-                {profile.allergies?.length > 0 ? (
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {profile.allergies.map((allergy, index) => (
-                      <Chip key={index} label={allergy} color="error" variant="outlined" size="small" icon={<AlertTriangle size={12} />} />
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="textSecondary">No allergies recorded</Typography>
-                )}
-              </Box>
-
-              <Box>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  Current Medications
-                </Typography>
-                {profile.current_medications?.length > 0 ? (
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {profile.current_medications.map((medication, index) => (
-                      <Chip key={index} label={medication} color="info" variant="outlined" size="small" icon={<FileText size={12} />} />
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="textSecondary">No current medications</Typography>
-                )}
-              </Box>
+              <MedicalConditions
+                title="Chronic Diseases"
+                items={profile.chronic_diseases}
+                color="warning"
+                icon={Heart}
+              />
+              <MedicalConditions
+                title="Allergies"
+                items={profile.allergies}
+                color="error"
+                icon={AlertTriangle}
+              />
+              <MedicalConditions
+                title="Current Medications"
+                items={profile.current_medications}
+                color="info"
+                icon={FileText}
+              />
             </Box>
           </InfoCard>
         </Grid>
-
-        <Grid item xs={12}>
-          <InfoCard title="Account Information" icon={<Clock size={20} />} color="info">
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <InfoItem icon={<Calendar size={16} />} label="Patient Since" value={formatDate(patient.createdAt)} />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <InfoItem icon={<Clock size={16} />} label="Last Updated" value={formatDate(patient.updatedAt)} />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <InfoItem icon={<User size={16} />} label="Account Status" value="Active" />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <InfoItem icon={<Info size={16} />} label="Patient ID" value={patient._id?.slice(-8)} />
-              </Grid>
-            </Grid>
-          </InfoCard>
-        </Grid>
-
+        {/* Additional Notes */}
         {profile.notes && (
           <Grid item xs={12}>
-            <InfoCard title="Additional Notes" icon={<FileText size={20} />} color="secondary">
-              <Paper variant="outlined" sx={{ p: 2, bgcolor: theme.palette.grey[50] }}>
-                <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}>{profile.notes}</Typography>
+            <InfoCard title="Additional Notes" icon={FileText} color="secondary">
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  bgcolor: theme.palette.grey[50],
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "pre-wrap",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {profile.notes}
+                </Typography>
               </Paper>
             </InfoCard>
           </Grid>
